@@ -1,12 +1,18 @@
 sudo: false
 language: cpp
-os:
-  - linux
-  - osx
-compiler:
-  - gcc
-  - clang
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+      env: EXTRA_JOB=coverage-doxygen
+    - os: linux
+      compiler: clang
+      env: EXTRA_JOB=static-analysis
+    - os: osx
+      compiler: clang
+      env: EXTRA_JOB=nothing
 script:
   - CXXFLAGS="-Wall -Wextra -Wpedantic" CFLAGS="-Wall -Wextra -Wpedantic" cmake .
   - make
   - ./ithitest
+  - echo $EXTRA_JOB
