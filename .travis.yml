@@ -74,7 +74,7 @@ script:
       if $DOXYGEN ; then
         doxygen travis/Doxyfile
       fi
-after_install:
+after_script:
   - |
       if $ANALYSIS || $COVERAGE || $DOXYGEN ; then
         ( cd /tmp/ithipages
