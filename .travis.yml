@@ -5,20 +5,24 @@ addons:
     packages:
       - valgrind
       - lcov
+      - python
 matrix:
   include:
     - os: linux
       compiler: gcc
-      env: VALGRIND=true  ANALYSIS=false COVERAGE=true  DOXYGEN=true
+      env: VALGRIND=true  ANALYSIS=true  COVERAGE=true  DOXYGEN=true
     - os: linux
       compiler: clang
-      env: VALGRIND=true  ANALYSIS=true  COVERAGE=false DOXYGEN=false
+      env: VALGRIND=true  ANALYSIS=false COVERAGE=false DOXYGEN=false
+    - os: osx
+      compiler: gcc
+      env: VALGRIND=false ANALYSIS=false COVERAGE=false DOXYGEN=false
     - os: osx
       compiler: clang
-      env: VALGRIND=false ANALYSIS=true  COVERAGE=false DOXYGEN=false
+      env: VALGRIND=false ANALYSIS=false COVERAGE=false DOXYGEN=false
 script:
   - if $COVERAGE ; then CXXFLAGS="-g -fprofile-arcs -ftest-coverage -O0 -Wall -Wextra -Wpedantic -Werror" CFLAGS="-g -fprofile-arcs -ftest-coverage -O0 -Wall -Wextra -Wpedantic -Werror" LDFLAGS="-lgcov --coverage" cmake . ; elif $VALGRIND || $ANALYSIS ; then CXXFLAGS="-g -Wall -Wextra -Wpedantic -Werror" CFLAGS="-g -Wall -Wextra -Wpedantic -Werror" cmake . ; else CXXFLAGS="-Wall -Wextra -Wpedantic -Werror" CFLAGS="-Wall -Wextra -Wpedantic -Werror" cmake . ; fi
-  - make -j 4
+  - make -j 4 VERBOSE=1
   - ./ithitest
   - if $VALGRIND ; then valgrind -v --error-exitcode=1 ./ithitest; fi
   - if $ANALYSIS ; then mkdir analysis ; fi
@@ -29,3 +33,4 @@ script:
   - if $COVERAGE ; then geninfo . -o ithitest.info ; fi
   - if $COVERAGE ; then lcov --remove ithitest.info '/usr/include/*' -o ithi.info ; fi
   - if $COVERAGE ; then genhtml ithi.info --output-directory coverage ; fi
+  - python travis/check-dnsstats-tables.py
