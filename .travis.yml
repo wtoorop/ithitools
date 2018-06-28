@@ -1,18 +1,30 @@
 sudo: false
 language: cpp
+addons:
+  apt:
+    packages:
+      - valgrind
 matrix:
   include:
     - os: linux
       compiler: gcc
-      env: EXTRA_JOB=coverage-doxygen
+      env: VALGRIND=true  ANALYSIS=false COVERAGE=true  DOXYGEN=true
     - os: linux
       compiler: clang
-      env: EXTRA_JOB=static-analysis
+      env: VALGRIND=true  ANALYSIS=true  COVERAGE=false DOXYGEN=false
     - os: osx
       compiler: clang
-      env: EXTRA_JOB=nothing
+      env: VALGRIND=false ANALYSIS=true  COVERAGE=false DOXYGEN=false
 script:
-  - CXXFLAGS="-Wall -Wextra -Wpedantic" CFLAGS="-Wall -Wextra -Wpedantic" cmake .
-  - make
+  - if $COVERAGE ; then CXXFLAGS="-g -fprofile-arcs -ftest-coverage -O0 -Wall -Wextra -Wpedantic -Werror" CFLAGS="-g -fprofile-arcs -ftest-coverage -O0 -Wall -Wextra -Wpedantic -Werror" LDFLAGS="-lgcov --coverage" cmake . ; else CXXFLAGS="-Wall -Wextra -Wpedantic -Werror" CFLAGS="-Wall -Wextra -Wpedantic -Werror" cmake . ; fi
+  - make -j 4
   - ./ithitest
-  - echo $EXTRA_JOB
+  - if $VALGRIND ; then valgrind -v --error-exitcode=1 ./ithitest; fi
+  - if $ANALYSIS ; then mkdir analysis ; fi
+  - if $ANALYSIS ; then echo "gitdir: ../.git" > analysis/.git ; fi
+  - if $ANALYSIS ; then cd analysis && git reset --hard ; fi
+  - if $ANALYSIS ; then cd analysis && scan-build cmake . ; fi
+  - if $ANALYSIS ; then cd analysis && scan-build -o ../analysis-results -stats make . ; fi
+  - if $COVERAGE ; then geninfo . -o ithitest.info ; fi
+  - if $COVERAGE ; then lcov --remove ithitest.info '/usr/include/*' -o ithi.info ; fi
+  - if $COVERAGE ; then genhtml ithi.info --output-directory coverage ; fi
