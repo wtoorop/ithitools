@@ -1,5 +1,18 @@
 sudo: false
 language: cpp
+before_install:
+  - openssl aes-256-cbc -K $encrypted_d4648d65d39b_key -iv $encrypted_d4648d65d39b_iv -in travis/ithipages-publish-key.enc -out i~/.ssh/ithipages-publish-key -d
+  - chmod u=rw,og= ~/.ssh/ithipages-publish-key
+  - echo "Host github.com" >> ~/.ssh/config
+  - echo "  IdentityFile ~/.ssh/ithipages-publish-key" >> ~/.ssh/config
+  - |
+      if $ANALYSIS || $COVERAGE || $DOXYGEN ; then
+        ( mkdir /tmp
+          cd /tmp
+          git clone git@github.com:wtoorop/ithipages.git
+          ls -l
+        )
+      fi
 addons:
   apt:
     packages:
@@ -50,16 +63,27 @@ script:
           echo "gitdir: ../.git" > .git
           git reset --hard
           scan-build cmake .
-          scan-build -o ../analysis-results -stats make .
+          scan-build -o /tmp/ithipages/analysis -stats make .
         )
       fi
   - |
       if $COVERAGE ; then
         geninfo .  -o ithitest.info
         lcov --remove ithitest.info '/usr/include/*' -o ithi.info
-        genhtml ithi.info --output-directory coverage
+        genhtml ithi.info --output-directory /tmp/ithipages/coverage
       fi
   - |
       if $DOXYGEN ; then
         doxygen travis/Doxyfile
+      fi
+after_install:
+  - |
+      if $ANALYSIS || $COVERAGE || $DOXYGEN ; then
+        ( cd /tmp/ithipages
+          [ -d analysis ] && git add analysis
+          [ -d coverage ] && git add coverage
+          [ -d doxygen  ] && git add doxygen
+          git commit -m "update from travis at `date`" \
+          && git push
+        )
       fi
