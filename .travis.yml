@@ -22,7 +22,7 @@ script:
   - ./ithitest
   - if $VALGRIND ; then valgrind -v --error-exitcode=1 ./ithitest; fi
   - if $ANALYSIS ; then mkdir analysis ; fi
-  - if $ANALYSIS ; then echo 'gitdir: ../.git' > analysis/.git ; fi
+  - "if $ANALYSIS ; then echo 'gitdir: ../.git' > analysis/.git ; fi"
   - if $ANALYSIS ; then (cd analysis && git reset --hard) ; fi
   - if $ANALYSIS ; then (cd analysis && scan-build cmake .) ; fi
   - if $ANALYSIS ; then (cd analysis && scan-build -o ../analysis-results -stats make .) ; fi
