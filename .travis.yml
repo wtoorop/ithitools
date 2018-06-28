@@ -6,6 +6,8 @@ addons:
       - valgrind
       - lcov
       - python
+      - doxygen
+      - graphviz
 matrix:
   include:
     - os: linux
@@ -21,16 +23,43 @@ matrix:
       compiler: clang
       env: VALGRIND=false ANALYSIS=false COVERAGE=false DOXYGEN=false
 script:
-  - if $COVERAGE ; then CXXFLAGS="-g -fprofile-arcs -ftest-coverage -O0 -Wall -Wextra -Wpedantic -Werror" CFLAGS="-g -fprofile-arcs -ftest-coverage -O0 -Wall -Wextra -Wpedantic -Werror" LDFLAGS="-lgcov --coverage" cmake . ; elif $VALGRIND || $ANALYSIS ; then CXXFLAGS="-g -Wall -Wextra -Wpedantic -Werror" CFLAGS="-g -Wall -Wextra -Wpedantic -Werror" cmake . ; else CXXFLAGS="-Wall -Wextra -Wpedantic -Werror" CFLAGS="-Wall -Wextra -Wpedantic -Werror" cmake . ; fi
+  - |
+      if $COVERAGE ; then
+          CXXFLAGS="-Wall -Wextra -Wpedantic -Werror -g -fprofile-arcs -ftest-coverage -O0" \
+            CFLAGS="-Wall -Wextra -Wpedantic -Werror -g -fprofile-arcs -ftest-coverage -O0" \
+           LDFLAGS="-lgcov --coverage" cmake .
+      elif $VALGRIND || $ANALYSIS ; then
+          CXXFLAGS="-Wall -Wextra -Wpedantic -Werror -g" \
+            CFLAGS="-Wall -Wextra -Wpedantic -Werror -g" cmake .
+      else
+          CXXFLAGS="-Wall -Wextra -Wpedantic -Werror"
+            CFLAGS="-Wall -Wextra -Wpedantic -Werror" cmake .
+      fi
   - make -j 4 VERBOSE=1
   - ./ithitest
-  - if $VALGRIND ; then valgrind -v --error-exitcode=1 ./ithitest; fi
-  - if $ANALYSIS ; then mkdir analysis ; fi
-  - if $ANALYSIS ; then echo 'gitdir\: ../.git' > analysis/.git ; fi
-  - if $ANALYSIS ; then (cd analysis && git reset --hard) ; fi
-  - if $ANALYSIS ; then (cd analysis && scan-build cmake .) ; fi
-  - if $ANALYSIS ; then (cd analysis && scan-build -o ../analysis-results -stats make .) ; fi
-  - if $COVERAGE ; then geninfo . -o ithitest.info ; fi
-  - if $COVERAGE ; then lcov --remove ithitest.info '/usr/include/*' -o ithi.info ; fi
-  - if $COVERAGE ; then genhtml ithi.info --output-directory coverage ; fi
   - python travis/check-dnsstats-tables.py
+  - |
+      if $VALGRIND ; then
+        valgrind -v --error-exitcode=1 ./ithitest
+      fi
+  - |
+      if $ANALYSIS ; then
+        mkdir analysis
+        (
+          cd analysis
+          echo "gitdir: ../.git" > .git
+          git reset --hard
+          scan-build cmake .
+          scan-build -o ../analysis-results -stats make .
+        )
+      fi
+  - |
+      if $COVERAGE ; then
+        geninfo .  -o ithitest.info
+        lcov --remove ithitest.info '/usr/include/*' -o ithi.info
+        genhtml ithi.info --output-directory coverage
+      fi
+  - |
+      if $DOXYGEN ; then
+        doxygen travis/Doxyfile
+      fi
