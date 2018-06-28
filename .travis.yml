@@ -1,12 +1,12 @@
 sudo: false
 language: cpp
 before_install:
-  - openssl aes-256-cbc -K $encrypted_d4648d65d39b_key -iv $encrypted_d4648d65d39b_iv -in travis/ithipages-publish-key.enc -out ~/.ssh/ithipages-publish-key -d
-  - chmod u=rw,og= ~/.ssh/ithipages-publish-key
-  - echo "Host github.com" >> ~/.ssh/config
-  - echo "  IdentityFile ~/.ssh/ithipages-publish-key" >> ~/.ssh/config
   - |
       if $ANALYSIS || $COVERAGE || $DOXYGEN ; then
+        openssl aes-256-cbc -K $encrypted_7847d4633a14_key -iv $encrypted_7847d4633a14_iv -in travis/ithipages-publish-key.enc -out ~/.ssh/ithipages-publish-key -d
+        chmod u=rw,og= ~/.ssh/ithipages-publish-key
+        echo "Host github.com" >> ~/.ssh/config
+        echo "  IdentityFile ~/.ssh/ithipages-publish-key" >> ~/.ssh/config
         ( mkdir /tmp
           cd /tmp
           git clone git@github.com:wtoorop/ithipages.git
@@ -57,8 +57,7 @@ script:
       fi
   - |
       if $ANALYSIS ; then
-        mkdir analysis
-        (
+        ( mkdir analysis
           cd analysis
           echo "gitdir: ../.git" > .git
           git reset --hard
