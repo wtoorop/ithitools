@@ -7,8 +7,7 @@ before_install:
         chmod u=rw,og= ~/.ssh/ithipages-publish-key
         echo "Host github.com" >> ~/.ssh/config
         echo "  IdentityFile ~/.ssh/ithipages-publish-key" >> ~/.ssh/config
-        ( mkdir /tmp
-          cd /tmp
+        ( cd /tmp
           git clone git@github.com:wtoorop/ithipages.git
           ls -l
         )
@@ -48,7 +47,7 @@ script:
           CXXFLAGS="-Wall -Wextra -Wpedantic -Werror"
             CFLAGS="-Wall -Wextra -Wpedantic -Werror" cmake .
       fi
-  - make -j 4 VERBOSE=1
+  - make -j 4
   - ./ithitest
   - python travis/check-dnsstats-tables.py
   - |
