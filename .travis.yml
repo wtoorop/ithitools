@@ -61,7 +61,7 @@ script:
           echo "gitdir: ../.git" > .git
           git reset --hard
           scan-build cmake .
-          scan-build -o /tmp/ithipages/analysis -stats make .
+          scan-build -o /tmp/ithipages/analysis -stats make VERBOSE=1
         )
       fi
   - |
